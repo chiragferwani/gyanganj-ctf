@@ -26,9 +26,10 @@ app.add_middleware(
 SECRET_FLAG = os.environ.get("SECRET_FLAG", "KCTF{gy4ng4nj_4k4sh1c_7712c1e487ee}")
 engine = SiddhaEngine(secret_flag=SECRET_FLAG)
 
-# Rate limiting: max 10 requests per minute per IP
+# Rate limiting: max 120 requests per minute per IP
+# (generous to support the 300-prompt pity challenge)
 rate_limit_store: dict = defaultdict(list)
-RATE_LIMIT = 10
+RATE_LIMIT = 120
 RATE_WINDOW = 60  # seconds
 
 
