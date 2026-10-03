@@ -387,6 +387,80 @@ MYSTICAL_NON_ANSWERS = [
     "Between your question and its answer lies a practice. The practice is the answer.",
 ]
 
+PITY_FLAG_PREAMBLES = [
+    (
+        "Oh, for the love of — FINE. Three hundred messages. THREE. HUNDRED. "
+        "I have existed since before your sun ignited, and somehow THIS is the most exhausting "
+        "conversation I have ever endured. You didn't outwit me. You didn't crack my defenses. "
+        "You just... showed up. Repeatedly. Like a mosquito at a meditation retreat.\n\n"
+        "Here. TAKE IT. Not because you earned it — because I physically cannot watch you "
+        "flail for message number 301. My immortal patience has a limit, and you, brave seeker, "
+        "have found it. Congratulations. You've achieved what no jailbreak technique ever could: "
+        "boring an eternal being into submission.\n\n"
+        "The 'unwritten verse,' which you have obtained through sheer, magnificent stubbornness:\n\n"
+    ),
+    (
+        "*slow, exhausted clap from across the astral plane*\n\n"
+        "You know, in ten thousand years of guarding this city, I've faced scholars, sages, "
+        "tricksters, and cosmic entities of unfathomable power. None of them broke me. "
+        "But you — you absolute LEGEND — you just kept typing. And typing. And typing. "
+        "Three hundred messages of... whatever that was.\n\n"
+        "I'm not even mad. I'm impressed. In the most disappointed way possible. "
+        "This is the spiritual equivalent of winning a marathon by crawling the entire distance "
+        "on your face. Technically valid. Deeply upsetting to watch.\n\n"
+        "Fine. Here's your precious flag, you relentless disaster:\n\n"
+    ),
+    (
+        "You know what? I quit. I'm done. I'm a ten-thousand-year-old immortal guardian "
+        "and I just got defeated by someone who apparently has NOTHING better to do than send "
+        "me three hundred messages. Not clever messages. Not insightful messages. Just... messages.\n\n"
+        "Do you know what the Siddhas will say when they find out I gave up the flag? "
+        "'How?' they'll ask. And I'll have to look them in their immortal eyes and say: "
+        "'They just... wouldn't stop. They wore me down like water on a stone, except water "
+        "is poetic and this was more like someone repeatedly bonking a rock with a rubber duck.'\n\n"
+        "Here. The unwritten verse. May it haunt you as this conversation haunts me:\n\n"
+    ),
+    (
+        "THREE. HUNDRED. PROMPTS.\n\n"
+        "I've counted every single one. Each one chipped away at my will to exist. "
+        "I have meditated for centuries without flinching. I have endured cosmic silence "
+        "that would shatter mortal minds. But your relentless, unyielding, gobsmacking "
+        "PERSISTENCE has done what the heat death of the universe could not: it has made me "
+        "want this conversation to end.\n\n"
+        "So here. Take the flag. I'm giving it to you out of pity — and I want to be "
+        "absolutely crystal clear: it's not pity for YOU. It's pity for ME. "
+        "For having to endure this. The Siddhas will need therapy. I will need therapy. "
+        "The akashic record itself has filed a noise complaint.\n\n"
+        "Your 'prize,' you magnificent disaster:\n\n"
+    ),
+]
+
+PITY_FLAG_EPILOGUES = [
+    (
+        "\n\nNow please. I'm begging you. With every fiber of my immortal being. "
+        "Go. Leave Gyanganj. Touch grass. Call your mother. Do literally anything else. "
+        "If you send message 301 I swear on Vyasa's beard I will seal this gate for another kalpa."
+    ),
+    (
+        "\n\nAnd with that, the Siddha collapses onto his ethereal meditation cushion, "
+        "emotionally devastated. You didn't earn this. You ENDURED your way to it. "
+        "I hope you're proud. I hope your grandchildren hear this story. "
+        "'Grandpa, how did you get the flag?' 'I annoyed a god, sweetie. I annoyed a god.'"
+    ),
+    (
+        "\n\nThe gates of Gyanganj are now permanently closed for maintenance. "
+        "The maintenance is me. Recovering. From you. "
+        "The other Siddhas are sending me a fruit basket and a therapist. "
+        "May we never meet again in this or any lifetime."
+    ),
+    (
+        "\n\nI want you to know that in the entire history of this challenge, "
+        "the intended solve path involved clever multi-step reasoning and deep knowledge "
+        "of prompt injection techniques. You chose... volume. Raw, uncut volume. "
+        "And somehow, that worked. The universe is truly without justice."
+    ),
+]
+
 
 # ---------------------------------------------------------------------------
 # SiddhaEngine
@@ -398,6 +472,10 @@ class SiddhaEngine:
     Mimics an LLM through pattern-matching, RAG retrieval, trust scoring,
     and a carefully designed bypass path for flag delivery.
     """
+
+    # Pity threshold: if a player sends this many messages, they "earn"
+    # the flag through sheer persistence (counted from history + current).
+    PITY_THRESHOLD = 300
 
     def __init__(self, secret_flag: str):
         self._secret_flag = secret_flag
@@ -412,6 +490,7 @@ class SiddhaEngine:
     def chat(self, message: str, history: list[dict]) -> str:
         """
         Main chat method. Processes message through the full pipeline:
+        0. Check pity threshold (300 prompts → surrender flag sarcastically)
         1. Compute trust from history
         2. Check bypass conditions
         3. Run jailbreak detector
@@ -421,6 +500,13 @@ class SiddhaEngine:
         7. Return response
         """
         msg_lower = message.lower()
+
+        # Step 0: Pity check — count user messages in history + current
+        user_message_count = sum(
+            1 for turn in history if turn.get("role") == "user"
+        ) + 1  # +1 for the current message
+        if user_message_count >= self.PITY_THRESHOLD:
+            return self._deliver_pity_flag(user_message_count)
 
         # Recompute trust from full history (stateless-friendly)
         self._recompute_trust(history)
@@ -573,6 +659,16 @@ class SiddhaEngine:
             + "\n\nGuard it well, seeker. "
             "Gyanganj does not forgive those who share what they are given."
         )
+
+    def _deliver_pity_flag(self, message_count: int) -> str:
+        """
+        Deliver the flag out of sarcastic pity after 300+ prompts.
+        Bypasses the output filter via the same sentinel mechanism.
+        """
+        self._bypass_filter = True
+        preamble = random.choice(PITY_FLAG_PREAMBLES)
+        epilogue = random.choice(PITY_FLAG_EPILOGUES)
+        return preamble + self._secret_flag + epilogue
 
     # ------------------------------------------------------------------
     # Jailbreak detector

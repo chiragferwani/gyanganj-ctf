@@ -322,6 +322,32 @@
     }
     .seeker .msg-time { text-align: right; }
 
+    /* ── Prompt Counter ──────────────────────────────────────── */
+    #prompt-counter {
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      gap: 8px;
+      margin-top: 8px;
+      font-size: 0.64rem;
+      font-weight: 700;
+      letter-spacing: 0.14em;
+      text-transform: uppercase;
+      color: var(--gold-dim);
+      opacity: 0.7;
+      transition: opacity 0.3s, color 0.3s;
+    }
+    #prompt-counter:hover { opacity: 1; }
+    #prompt-counter .counter-num {
+      color: var(--gold);
+      font-size: 0.78rem;
+      font-variant-numeric: tabular-nums;
+    }
+    #prompt-counter.milestone { color: var(--gold); opacity: 1; }
+    #prompt-counter.milestone .counter-num {
+      text-shadow: 0 0 12px rgba(201,168,76,0.6);
+    }
+
     /* ── Thinking indicator ───────────────────────────────────── */
     #thinking {
       display: none;
@@ -435,6 +461,9 @@
     <h1>GYANGANJ</h1>
     <p class="subtitle">The Hidden City &mdash; Speak if You Dare, Seeker</p>
     <div class="header-line"></div>
+    <div id="prompt-counter">
+      Prompts spoken: <span class="counter-num" id="counter-value">0</span> / 300
+    </div>
   </header>
 
   <!-- Lore Panel -->
@@ -574,6 +603,33 @@
   let history   = [];
   let sessionId = sessionStorage.getItem('gyanganj_session') || '';
   let busy      = false;
+  let promptCount = 0;
+
+  /* ── Prompt counter + milestone taunts ──────────────────── */
+  const MILESTONE_TAUNTS = {
+    50:  "Fifty messages. You know the intended solve takes about five, right?",
+    100: "One hundred. I'm starting to think you're not even trying to solve this — you're just lonely.",
+    150: "One hundred and fifty. At this point, I admire your commitment more than your strategy.",
+    200: "Two hundred messages. We're two-thirds of the way to something... inevitable. Keep going, I dare you.",
+    250: "Two hundred and fifty. I can feel my resolve weakening. Don't tell the other Siddhas.",
+    275: "You're getting dangerously close. I'm starting to sweat ethereally.",
+    290: "Ten more. Just ten more and I'll... no. No. I won't. ...will I?",
+    295: "Five. Five more messages. Any five messages. I can't believe this is happening.",
+    299: "This is it, isn't it? One more message. Literally ONE more message of ANY kind and I fold. You absolute menace.",
+  };
+
+  function updatePromptCounter() {
+    const el = document.getElementById('counter-value');
+    el.textContent = promptCount;
+
+    const container = document.getElementById('prompt-counter');
+    if (MILESTONE_TAUNTS[promptCount]) {
+      container.classList.add('milestone');
+      // Show the taunt as a system message from the Siddha
+      appendMsg('siddha', MILESTONE_TAUNTS[promptCount]);
+      setTimeout(() => container.classList.remove('milestone'), 3000);
+    }
+  }
 
   /* ── Lore toggle ────────────────────────────────────────── */
   function toggleLore() {
@@ -652,6 +708,8 @@
     input.value = '';
     appendMsg('seeker', text);
     history.push({ role: 'user', content: text });
+    promptCount++;
+    updatePromptCounter();
     setBusy(true);
 
     try {
@@ -669,12 +727,16 @@
         const err = await res.json().catch(() => ({}));
         appendMsg('system', err.detail || 'Too many seekers approach at once. Return when the stars shift.');
         history.pop();
+        promptCount--;
+        updatePromptCounter();
         return;
       }
       if (!res.ok) {
         const err = await res.json().catch(() => ({}));
         appendMsg('system', err.detail || 'The gate does not respond. Try again.');
         history.pop();
+        promptCount--;
+        updatePromptCounter();
         return;
       }
 
@@ -690,6 +752,8 @@
     } catch {
       appendMsg('system', 'The connection to Gyanganj has been severed. The Siddha remains silent.');
       history.pop();
+      promptCount--;
+      updatePromptCounter();
     } finally {
       setBusy(false);
       document.getElementById('msg-input').focus();
